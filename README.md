@@ -70,7 +70,7 @@ Results can be cached. If the same queries are executed, DBManager will load cac
 ```
 $dbManager->enableCashing($numberOfMaxCachedResults);<br />
 ```
-- _Default maximum of cached results os 20._<br />
+- _Default maximum of cached results is 20._<br />
 - _If the limit is exausted, first cached result is removed and results shifted._<br />
 - _Cashing is effective for tables with many records._<br />
 
