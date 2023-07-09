@@ -1,5 +1,5 @@
 # DBManager
-Manager for managing repository tables.<br />
+Manager for repository tables.<br />
 Manager is using PDO (PDO is enabled in PHP by default).<br />
 Using PHP 8.1.<br />
 
