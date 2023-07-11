@@ -68,7 +68,7 @@ $result = $dbManager->table('users')->select('id, name, phone')->where(...)->fet
 
 Results can be cached. If the same queries are executed, DBManager will load cached results.<br />
 ```
-$dbManager->enableCashing($numberOfMaxCachedResults);<br />
+$dbManager->enableCashing($numberOfMaxCachedResults);
 ```
 - _Default maximum of cached results is 20._<br />
 - _If the limit is exausted, first cached result is removed and results shifted._<br />
