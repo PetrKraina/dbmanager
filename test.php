@@ -16,7 +16,7 @@ $dbManager = new DBManager(
 );
 
 // Selektování dat
-/*
+
 $dbManager->enableCashing();
 
 $result = $dbManager->table('uzivatele')
@@ -27,8 +27,12 @@ $result = $dbManager->table('uzivatele')
                     ->limit(2, 0)
                     ->leftJoin('objednavky')
                         ->on('uzivatele.id = objednavky.id_uzivatele')
-                        ->select('cena, datum')
-                        ->endJoin($dbManager)
+                        ->select('objednavky.cena, objednavky.datum')
+							->leftJoin('objednane_zbozi')
+							->on('objednavky.id = objednane_zbozi.id_objednavky')
+							->select('objednane_zbozi.nazev_zbozi, objednane_zbozi.cena')
+                    ->endJoin($dbManager)
+
                     ->fetchAll();
 
 print_r($result);
@@ -36,7 +40,7 @@ echo '<hr>';
 
 $result2 = $dbManager->table('objednavky')->select('*')->fetchAll();
 
-print_r($result2);*/
+print_r($result2);
 
 
 // Vkládání dat

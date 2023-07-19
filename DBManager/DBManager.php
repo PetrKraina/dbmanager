@@ -459,6 +459,9 @@ class DBManager implements DBManagerInterface
      */
     private function createTask() {
         $query = $this->createQuery();
+
+		echo $query;
+
         $task = $this->database->prepare($query);
         $task->execute($this->queryProperty->getWhereArgs());
         return $task;
@@ -491,6 +494,9 @@ class DBManager implements DBManagerInterface
 
         if($this->queryProperty->getComposite() instanceof DBManager) {
             $queryParts = $this->createJoinQueriesPart($this->queryProperty->getComposite());
+
+			print_r($queryParts);
+
             $join .= $queryParts['join'];
 
             if (empty($select) === false) {
@@ -525,7 +531,7 @@ class DBManager implements DBManagerInterface
     /**
      * Creates SQL query part for JOIN.
      */
-    private function createJoinQueriesPart($composite) {
+    private function createJoinQueriesPart($composite): array {
 
         $join = '';
         $select = '';
@@ -537,7 +543,9 @@ class DBManager implements DBManagerInterface
         $select .= $composite->queryProperty->getSelect();
 
         if($composite->queryProperty->getComposite() instanceof DBManager) {
-            $queryPart .= $composite->createJoinQueriesPart($composite->queryProperty->getComposite());
+            $queryPart = $composite->createJoinQueriesPart($composite->queryProperty->getComposite());
+			$join .= ' ' . $queryPart['join'];
+			$select .= ', ' . $queryPart['select'];
         }
 
         return ['join' => $join, 'select' => $select];
