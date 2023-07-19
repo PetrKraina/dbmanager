@@ -9,14 +9,14 @@ namespace Mavi\DBManager;
 
 class DBManager implements DBManagerInterface
 {
-    /** 
-     * @param \PDO object. 
+    /**
+     * @param \PDO object.
      */
     private $database = null;
 
     /**
      * @param QueryProperties object.
-     * Object beares parameters of query. 
+     * Object beares parameters of query.
      * When the query is done, object is destroyed or saved to cache with result and created new one.
      */
     private $queryProperty = null;
@@ -38,12 +38,12 @@ class DBManager implements DBManagerInterface
      * @param string $user DB user
      * @param string $password Password to DB.
      */
-    public function __construct(string $host='', string $dbname='', string $user='', string $password='') 
+    public function __construct(string $host='', string $dbname='', string $user='', string $password='')
     {
         // In case of composite structure are those values empty and connection is not needed.
         if(($host === '' || $dbname === '' || $user === '') === false) {
             $this->database = new \PDO('mysql:host=' . $host . ';dbname=' . $dbname, $user, $password);
-        }   
+        }
 
         $this->queryProperty = new QueryProperties;
     }
@@ -66,7 +66,7 @@ class DBManager implements DBManagerInterface
 
     /**
      * @param string|array $select Table columns to select.
-     * 
+     *
      * When joining tables, define fith table names.
      * Example: users.id, users.name,...
      */
@@ -84,25 +84,25 @@ class DBManager implements DBManagerInterface
             $this->queryProperty->setSelect($selectString);
 
             return $this;
-        } 
+        }
 
         $this->queryProperty->setSelect($select);
 
         return $this;
     }
 
-    /** @param string|array $where Specifies condition for selection. 
+    /** @param string|array $where Specifies condition for selection.
      *  @param any $args Specifies values represented by questionmarks.
      * Example: id = ?
      * Example: [id = ?, name = ?] // Creates 'id = ? AND name = ?'
-     * Example: 'id = ? AND name = ?' 
-     * 
-     * Usage example: 
+     * Example: 'id = ? AND name = ?'
+     *
+     * Usage example:
      * $db->where('id = ? AND name = ?', 1, 'Albert');
      */
     public function where(string|array $where): DBManager {
 
-        $args = func_get_args(); 
+        $args = func_get_args();
         array_shift($args); // Remove first argument ($where).
 
         $this->queryProperty->setWhereArgs($args);
@@ -123,12 +123,12 @@ class DBManager implements DBManagerInterface
         }
 
         $this->queryProperty->setWhere($where);
-        
+
         return $this;
     }
 
     /**
-     * @param string|array $orderBy 
+     * @param string|array $orderBy
      * Example: name DESC, age ASC
      * Example: ['name DESC', 'age ASC']
      */
@@ -342,7 +342,7 @@ class DBManager implements DBManagerInterface
      * Creating data
      */
 
-    /** 
+    /**
      * @param array $data
      * Example: $data = ['name' => 'Albert', 'age' = '16']
      */
@@ -498,7 +498,7 @@ class DBManager implements DBManagerInterface
             }
 
             $select .= $queryParts['select'];
-            
+
         }
 
         if ($this->queryProperty->getWhere() !== null) {
@@ -508,11 +508,11 @@ class DBManager implements DBManagerInterface
         if ($this->queryProperty->getOrderBy() !== null) {
             $order .= 'ORDER BY ' . $this->queryProperty->getOrderBy() . ' ';
         }
-        
+
         if ($this->queryProperty->getLimit() !== null) {
             $limit .= 'LIMIT ' . $this->queryProperty->getLimit() . ' ';
         }
-        
+
         if ($this->queryProperty->getOffset() !== null) {
             $offset .= 'OFFSET ' . $this->queryProperty->getOffset();
         }
@@ -578,7 +578,7 @@ class DBManager implements DBManagerInterface
             $this->queriesCache[] = $this->queryProperty;
         }
 
-        $this->queryProperty = new QueryProperties; 
+        $this->queryProperty = new QueryProperties;
     }
 
 }
