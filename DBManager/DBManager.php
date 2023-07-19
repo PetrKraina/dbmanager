@@ -9,6 +9,13 @@ namespace Mavi\DBManager;
 
 class DBManager implements DBManagerInterface
 {
+
+	/**
+	 * Variable of self-instace.
+	 * @var DBManager
+	 */
+	private static DBManager $singleton;
+
     /**
      * @param \PDO object.
      */
@@ -32,36 +39,34 @@ class DBManager implements DBManagerInterface
      */
     private $queriesCache = [];
 
-    /**
+	/**
      * @param string $host Host server address.
      * @param string $dbname Database name.
      * @param string $user DB user
      * @param string $password Password to DB.
      */
-    public function __construct(string $host='', string $dbname='', string $user='', string $password='')
-    {
-        // In case of composite structure are those values empty and connection is not needed.
-        if(($host === '' || $dbname === '' || $user === '') === false) {
-            $this->database = new \PDO('mysql:host=' . $host . ';dbname=' . $dbname, $user, $password);
-        }
+	public static function create(string $host='', string $dbname='', string $user='', string $password=''): DBManager {
 
-        $this->queryProperty = new QueryProperties;
-    }
+		$this->singleton = new DBManager;
+		$this->singleton->database = new \PDO('mysql:host=' . $host . ';dbname=' . $dbname, $user, $password);
+		$this->singleton->queryProperty = new QueryProperties;
+		return $this->singleton;
+	}
 
     /**
      * Enables query and result cache by setting maximum number of cached results.
      * Default cached queries limit is 20.
      */
     public function enableCashing(int $maxCachedQueries = 20): void {
-        $this->maxCachedQueries = $maxCachedQueries;
+        $this->singleton->maxCachedQueries = $maxCachedQueries;
     }
 
     /**
      * @param string $table Name of database table.
      */
     public function table(string $table): DBManager {
-        $this->queryProperty->setTable($table);
-        return $this;
+        $this->singleton->queryProperty->setTable($table);
+        return $this->singleton;
     }
 
     /**
@@ -81,14 +86,14 @@ class DBManager implements DBManagerInterface
             }
             $selectString = rtrim($selectString, ', ');
 
-            $this->queryProperty->setSelect($selectString);
+            $this->singleton->queryProperty->setSelect($selectString);
 
-            return $this;
+            return $this->singleton;
         }
 
-        $this->queryProperty->setSelect($select);
+        $this->singleton->queryProperty->setSelect($select);
 
-        return $this;
+        return $this->singleton;
     }
 
     /** @param string|array $where Specifies condition for selection.
@@ -105,7 +110,7 @@ class DBManager implements DBManagerInterface
         $args = func_get_args();
         array_shift($args); // Remove first argument ($where).
 
-        $this->queryProperty->setWhereArgs($args);
+        $this->singleton->queryProperty->setWhereArgs($args);
 
         if(is_array($where)) {
 
@@ -117,14 +122,14 @@ class DBManager implements DBManagerInterface
 
             $whereString = rtrim($whereString, 'AND ');
 
-            $this->queryProperty->setWhere($whereString);
+            $this->singleton->queryProperty->setWhere($whereString);
 
-            return $this;
+            return $this->singleton;
         }
 
-        $this->queryProperty->setWhere($where);
+        $this->singleton->queryProperty->setWhere($where);
 
-        return $this;
+        return $this->singleton;
     }
 
     /**
@@ -143,14 +148,14 @@ class DBManager implements DBManagerInterface
             }
             $orderByString = rtrim($orderByString, ', ');
 
-            $this->queryProperty->setOrderBy($orderByString);
+            $this->singleton->queryProperty->setOrderBy($orderByString);
 
-            return $this;
+            return $this->singleton;
         }
 
-        $this->queryProperty->setOrderBy($orderBy);
+        $this->singleton->queryProperty->setOrderBy($orderBy);
 
-        return $this;
+        return $this->singleton;
     }
 
     /**
@@ -159,9 +164,9 @@ class DBManager implements DBManagerInterface
      * Specifies limit and offset for selecting data rows.
      */
     public function limit(int $limit, int $offset = 0): DBManager {
-        $this->queryProperty->setLimit($limit);
-        $this->queryProperty->setOffset($offset);
-        return $this;
+        $this->singleton->queryProperty->setLimit($limit);
+        $this->singleton->queryProperty->setOffset($offset);
+        return $this->singleton;
     }
 
     /*
@@ -174,21 +179,21 @@ class DBManager implements DBManagerInterface
      */
     public function fetchSingle(int $index = 0): string|int {
 
-        if($this->database === null) {
+        if($this->singleton->database === null) {
             throw new \Exception('Database connection has not been set.');
         }
 
-        $this->queryProperty->setFetchType($this->queryProperty::FETCH_SINGLE);
+        $this->singleton->queryProperty->setFetchType($this->singleton->queryProperty::FETCH_SINGLE);
 
-        $cachedResult = $this->checkQueriesCache($this->queryProperty);
+        $cachedResult = $this->singleton->checkQueriesCache($this->singleton->queryProperty);
         if ($cachedResult !== null) {
-            $this->cacheAndResetQueryProperties();
+            $this->singleton->cacheAndResetQueryProperties();
             return $cachedResult;
         }
 
-        $task = $this->createTask();
+        $task = $this->singleton->createTask();
         $result = $task->fetchColumn($index);
-        $this->cacheAndResetQueryProperties($result);
+        $this->singleton->cacheAndResetQueryProperties($result);
         return $result;
     }
 
@@ -197,21 +202,21 @@ class DBManager implements DBManagerInterface
      */
     public function fetch(): array {
 
-        if($this->database === null) {
+        if($this->singleton->database === null) {
             throw new \Exception('Database connection has not been set.');
         }
 
-        $this->queryProperty->setFetchType($this->queryProperty::FETCH);
+        $this->singleton->queryProperty->setFetchType($this->singleton->queryProperty::FETCH);
 
-        $cachedResult = $this->checkQueriesCache($this->queryProperty);
+        $cachedResult = $this->singleton->checkQueriesCache($this->singleton->queryProperty);
         if ($cachedResult !== null) {
-            $this->cacheAndResetQueryProperties();
+            $this->singleton->cacheAndResetQueryProperties();
             return $cachedResult;
         }
 
-        $task = $this->createTask();
+        $task = $this->singleton->createTask();
         $result = $task->fetch(\PDO::FETCH_ASSOC);
-        $this->cacheAndResetQueryProperties($result);
+        $this->singleton->cacheAndResetQueryProperties($result);
         return $result;
     }
 
@@ -224,21 +229,21 @@ class DBManager implements DBManagerInterface
      */
     public function fetchAll(): array {
 
-        if($this->database === null) {
+        if($this->singleton->database === null) {
             throw new \Exception('Database connection has not been set.');
         }
 
-        $this->queryProperty->setFetchType($this->queryProperty::FETCH_ALL);
+        $this->singleton->queryProperty->setFetchType($this->singleton->queryProperty::FETCH_ALL);
 
-        $cachedResult = $this->checkQueriesCache($this->queryProperty);
+        $cachedResult = $this->singleton->checkQueriesCache($this->singleton->queryProperty);
         if ($cachedResult !== null) {
-            $this->cacheAndResetQueryProperties();
+            $this->singleton->cacheAndResetQueryProperties();
             return $cachedResult;
         }
 
-        $task = $this->createTask();
+        $task = $this->singleton->createTask();
         $result = $task->fetchAll(\PDO::FETCH_ASSOC);
-        $this->cacheAndResetQueryProperties($result);
+        $this->singleton->cacheAndResetQueryProperties($result);
         return $result;
     }
 
@@ -251,21 +256,21 @@ class DBManager implements DBManagerInterface
      */
     public function fetchPairs(): array {
 
-        if($this->database === null) {
+        if($this->singleton->database === null) {
             throw new \Exception('Database connection has not been set.');
         }
 
-        $this->queryProperty->setFetchType($this->queryProperty::FETCH_PAIRS);
+        $this->singleton->queryProperty->setFetchType($this->singleton->queryProperty::FETCH_PAIRS);
 
-        $cachedResult = $this->checkQueriesCache($this->queryProperty);
+        $cachedResult = $this->singleton->checkQueriesCache($this->singleton->queryProperty);
         if ($cachedResult !== null) {
-            $this->cacheAndResetQueryProperties();
+            $this->singleton->cacheAndResetQueryProperties();
             return $cachedResult;
         }
 
-        $task = $this->createTask();
+        $task = $this->singleton->createTask();
         $result = $task->fetchAll(\PDO::FETCH_ASSOC | \PDO::FETCH_UNIQUE);
-        $this->cacheAndResetQueryProperties($result);
+        $this->singleton->cacheAndResetQueryProperties($result);
         return $result;
     }
 
@@ -278,8 +283,8 @@ class DBManager implements DBManagerInterface
      * Example: users.id = orders.user_id
      */
     public function on(string $on): DBManager {
-        $this->queryProperty->setJoinOn($on);
-        return $this;
+        $this->singleton->queryProperty->setJoinOn($on);
+        return $this->singleton;
     }
 
     /**
@@ -296,10 +301,10 @@ class DBManager implements DBManagerInterface
      */
     public function innerJoin(string $table): DBManager {
         $composite = new DBManager();
-        $this->queryProperty->setComposite($composite);
-        $this->queryProperty->getComposite()->queryProperty->setJoin('INNER JOIN');
-        $this->queryProperty->getComposite()->queryProperty->setTable($table);
-        return $this->queryProperty->getComposite();
+        $this->singleton->queryProperty->setComposite($composite);
+        $this->singleton->queryProperty->getComposite()->queryProperty->setJoin('INNER JOIN');
+        $this->singleton->queryProperty->getComposite()->queryProperty->setTable($table);
+        return $this->singleton->queryProperty->getComposite();
     }
 
     /**
@@ -308,10 +313,10 @@ class DBManager implements DBManagerInterface
      */
     public function leftJoin(string $table): DBManager {
         $composite = new DBManager();
-        $this->queryProperty->setComposite($composite);
-        $this->queryProperty->getComposite()->queryProperty->setJoin('LEFT JOIN');
-        $this->queryProperty->getComposite()->queryProperty->setTable($table);
-        return $this->queryProperty->getComposite();
+        $this->singleton->queryProperty->setComposite($composite);
+        $this->singleton->queryProperty->getComposite()->queryProperty->setJoin('LEFT JOIN');
+        $this->singleton->queryProperty->getComposite()->queryProperty->setTable($table);
+        return $this->singleton->queryProperty->getComposite();
     }
 
     /**
@@ -320,10 +325,10 @@ class DBManager implements DBManagerInterface
      */
     public function rightJoin(string $table): DBManager {
         $composite = new DBManager();
-        $this->queryProperty->setComposite($composite);
-        $this->queryProperty->getComposite()->queryProperty->setJoin('RIGHT JOIN');
-        $this->queryProperty->getComposite()->queryProperty->setTable($table);
-        return $this->queryProperty->getComposite();
+        $this->singleton->queryProperty->setComposite($composite);
+        $this->singleton->queryProperty->getComposite()->queryProperty->setJoin('RIGHT JOIN');
+        $this->singleton->queryProperty->getComposite()->queryProperty->setTable($table);
+        return $this->singleton->queryProperty->getComposite();
     }
 
     /**
@@ -332,10 +337,10 @@ class DBManager implements DBManagerInterface
      */
     public function fullJoin(string $table): DBManager {
         $composite = new DBManager();
-        $this->queryProperty->setComposite($composite);
-        $this->queryProperty->getComposite()->queryProperty->setJoin('FULL JOIN');
-        $this->queryProperty->getComposite()->queryProperty->setTable($table);
-        return $this->queryProperty->getComposite();
+        $this->singleton->queryProperty->setComposite($composite);
+        $this->singleton->queryProperty->getComposite()->queryProperty->setJoin('FULL JOIN');
+        $this->singleton->queryProperty->getComposite()->queryProperty->setTable($table);
+        return $this->singleton->queryProperty->getComposite();
     }
 
     /*
@@ -372,18 +377,18 @@ class DBManager implements DBManagerInterface
         $cols = rtrim($cols, ', ');
         $valuesMask = rtrim($valuesMask, ', ');
 
-        $task = $this->database->prepare('INSERT INTO ' . $this->queryProperty->getTable() . ' (' . $cols . ') VALUES(' . $valuesMask . ')');
+        $task = $this->singleton->database->prepare('INSERT INTO ' . $this->singleton->queryProperty->getTable() . ' (' . $cols . ') VALUES(' . $valuesMask . ')');
 
         $task->execute($bindedValues);
 
-        return $this;
+        return $this->singleton;
     }
 
     /**
      * Returns ID of last added row.
      */
     public function getId(): int {
-        return $this->database->lastInsertId();
+        return $this->singleton->database->lastInsertId();
     }
 
     /*
@@ -396,11 +401,11 @@ class DBManager implements DBManagerInterface
      */
     public function update(array $data): bool {
 
-        if ($this->queryProperty->getTable() === null) {
+        if ($this->singleton->queryProperty->getTable() === null) {
             throw new \Exception('Specify table condition $db->table(...) before updating.');
         }
 
-        if ($this->queryProperty->getWhere() === null) {
+        if ($this->singleton->queryProperty->getWhere() === null) {
             throw new \Exception('Specify condition for selecting $db->table(...)->where(...) before updating.');
         }
 
@@ -422,14 +427,14 @@ class DBManager implements DBManagerInterface
         $mask = rtrim($mask, ', ');
 
         $whereMask = '';
-        $whereConditions = explode('?', $this->queryProperty->getWhere());
+        $whereConditions = explode('?', $this->singleton->queryProperty->getWhere());
 
-        foreach ($this->queryProperty->getWhereArgs() as $key => $arg) {
+        foreach ($this->singleton->queryProperty->getWhereArgs() as $key => $arg) {
             $whereMask .= $whereConditions[$key] . ' :' . $key .' ';
             $bindedValues[':' . $key] = $arg;
         }
 
-        $task = $this->database->prepare('UPDATE ' . $this->queryProperty->getTable() . ' SET ' . $mask . ' WHERE ' . $whereMask);
+        $task = $this->singleton->database->prepare('UPDATE ' . $this->singleton->queryProperty->getTable() . ' SET ' . $mask . ' WHERE ' . $whereMask);
 
         return $task->execute($bindedValues);
     }
@@ -439,15 +444,15 @@ class DBManager implements DBManagerInterface
      */
 
     public function beginTransaction(): void {
-        $this->database->beginTransaction();
+        $this->singleton->database->beginTransaction();
     }
 
     public function commit(): void {
-        $this->database->commit();
+        $this->singleton->database->commit();
     }
 
     public function rollback(): void {
-        $this->database->rollback();
+        $this->singleton->database->rollback();
     }
 
     /*
@@ -458,9 +463,9 @@ class DBManager implements DBManagerInterface
      * Creates SQL/PDO task to execute nad runs it.
      */
     private function createTask() {
-        $query = $this->createQuery();
-        $task = $this->database->prepare($query);
-        $task->execute($this->queryProperty->getWhereArgs());
+        $query = $this->singleton->createQuery();
+        $task = $this->singleton->database->prepare($query);
+        $task->execute($this->singleton->queryProperty->getWhereArgs());
         return $task;
     }
 
@@ -469,11 +474,11 @@ class DBManager implements DBManagerInterface
      */
     private function createQuery() {
 
-        if ($this->queryProperty->getTable() === null) {
+        if ($this->singleton->queryProperty->getTable() === null) {
             throw new \Exception('Specify table condition $db->table(...).');
         }
 
-        if ($this->queryProperty->getSelect() === null) {
+        if ($this->singleton->queryProperty->getSelect() === null) {
             throw new \Exception('Specify which data you want to select $db->table(...)->select(...).');
         }
 
@@ -485,12 +490,12 @@ class DBManager implements DBManagerInterface
         $limit = '';
         $offset = '';
 
-        $select .= $this->queryProperty->getSelect();
+        $select .= $this->singleton->queryProperty->getSelect();
 
-        $from .= ' FROM ' . $this->queryProperty->getTable() . ' ';
+        $from .= ' FROM ' . $this->singleton->queryProperty->getTable() . ' ';
 
-        if($this->queryProperty->getComposite() instanceof DBManager) {
-            $queryParts = $this->createJoinQueriesPart($this->queryProperty->getComposite());
+        if($this->singleton->queryProperty->getComposite() instanceof DBManager) {
+            $queryParts = $this->singleton->createJoinQueriesPart($this->singleton->queryProperty->getComposite());
             $join .= $queryParts['join'];
 
             if (empty($select) === false) {
@@ -501,20 +506,20 @@ class DBManager implements DBManagerInterface
 
         }
 
-        if ($this->queryProperty->getWhere() !== null) {
-            $where .= 'WHERE ' . $this->queryProperty->getWhere() . ' ';
+        if ($this->singleton->queryProperty->getWhere() !== null) {
+            $where .= 'WHERE ' . $this->singleton->queryProperty->getWhere() . ' ';
         }
 
-        if ($this->queryProperty->getOrderBy() !== null) {
-            $order .= 'ORDER BY ' . $this->queryProperty->getOrderBy() . ' ';
+        if ($this->singleton->queryProperty->getOrderBy() !== null) {
+            $order .= 'ORDER BY ' . $this->singleton->queryProperty->getOrderBy() . ' ';
         }
 
-        if ($this->queryProperty->getLimit() !== null) {
-            $limit .= 'LIMIT ' . $this->queryProperty->getLimit() . ' ';
+        if ($this->singleton->queryProperty->getLimit() !== null) {
+            $limit .= 'LIMIT ' . $this->singleton->queryProperty->getLimit() . ' ';
         }
 
-        if ($this->queryProperty->getOffset() !== null) {
-            $offset .= 'OFFSET ' . $this->queryProperty->getOffset();
+        if ($this->singleton->queryProperty->getOffset() !== null) {
+            $offset .= 'OFFSET ' . $this->singleton->queryProperty->getOffset();
         }
 
         $query = $select . $from . $join . $where . $order . $limit . $offset;
@@ -550,7 +555,7 @@ class DBManager implements DBManagerInterface
 
         $hash = $queryProperties->getHash();
 
-        foreach ($this->queriesCache as $cachedQuery) {
+        foreach ($this->singleton->queriesCache as $cachedQuery) {
 
             if ($hash === $cachedQuery->getHash()) {
                 return $cachedQuery->getResult();
@@ -566,19 +571,19 @@ class DBManager implements DBManagerInterface
      */
     private function cacheAndResetQueryProperties(array|null $result = null): void {
 
-        if ($result !== null && $this->maxCachedQueries > 0) {
+        if ($result !== null && $this->singleton->maxCachedQueries > 0) {
 
-            if (count($this->queriesCache) === $this->maxCachedQueries) {
-                array_shift($this->queriesCache);
+            if (count($this->singleton->queriesCache) === $this->singleton->maxCachedQueries) {
+                array_shift($this->singleton->queriesCache);
             }
 
-            $this->queryProperty->setResult($result);
-            $this->queryProperty->getHash(); // Generates query hash, so the cashed query can not be changed
+            $this->singleton->queryProperty->setResult($result);
+            $this->singleton->queryProperty->getHash(); // Generates query hash, so the cashed query can not be changed
 
-            $this->queriesCache[] = $this->queryProperty;
+            $this->singleton->queriesCache[] = $this->singleton->queryProperty;
         }
 
-        $this->queryProperty = new QueryProperties;
+        $this->singleton->queryProperty = new QueryProperties;
     }
 
 }
