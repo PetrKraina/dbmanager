@@ -16,7 +16,7 @@ $dbManager = new DBManager(
 );
 
 // Selektování dat
-
+/*
 $dbManager->enableCashing();
 
 $result = $dbManager->table('uzivatele')
@@ -36,7 +36,7 @@ echo '<hr>';
 
 $result2 = $dbManager->table('objednavky')->select('*')->fetchAll();
 
-print_r($result2);
+print_r($result2);*/
 
 
 // Vkládání dat
@@ -46,9 +46,9 @@ $dbManager->beginTransaction();
 try {
     $id = $dbManager->table('uzivatele')->insert(['name' => 'Karel', 'email' => 'petr@petr.cz'])
                     ->getId();
-    
+
     $id = $dbManager->table('objednavky')->insert(['id_uzivatele' => $id, 'cena' => 1000, 'mena' => 'CZK', 'datum%sql' => 'NOW()'])->getId();
-        
+
     $dbManager->commit();
 
 } catch (\Exception $e) {
@@ -57,6 +57,6 @@ try {
 }
 
 */
-//$dbManager->where('uzivatele.name LIKE', 'Ja%')->update(['phone%sql' => 'NOW()']);
+$dbManager->table('uzivatele')->where('uzivatele.name LIKE ? AND uzivatele.id = ?', 'Ja%', 3)->update(['phone%sql' => '222']);
 
 ?>
