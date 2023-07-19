@@ -1,5 +1,5 @@
 {
-  "name": "Mavi/DBManager",
+  "name": "mavi/dbmanager",
   "description": "Manager for repository tables.",
   "type": "library",
   "require": {
